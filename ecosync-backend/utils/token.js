@@ -3,7 +3,7 @@ const crypto = require('crypto');
 const RefreshToken = require('../models/RefreshToken');
 
 const JWT_SECRET = process.env.JWT_SECRET;
-const JWT_EXPIRES = process.env.JWT_EXPIRES || '15m';
+const JWT_EXPIRES = process.env.JWT_EXPIRES_IN || '15m';
 const REFRESH_TOKEN_EXPIRES_DAYS = parseInt(process.env.REFRESH_TOKEN_EXPIRES_DAYS || process.env.REFRESH_TOKEN_EXPIRES || '30', 10);
 
 function signAccessToken(payload) {

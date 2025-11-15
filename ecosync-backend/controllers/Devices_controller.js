@@ -27,7 +27,7 @@ async function requirePasswordReverify(req, res) {
         const user = req.user; 
         if(!user) return res.status(400).json({ success: false, message: 'user required'});
         const ok = await bcrypt.compare(password, user.passwordHash);
-        if(!ok) return res.status(401).json({ success; false, message: 'invalid password '});
+        if(!ok) return res.status(401).json({ success: false, message: 'invalid password '});
 
         const jti = generateJti();
         const token = signLinkToken({ userId: user._id.toString(), purpose: 'reverify'}, jti);

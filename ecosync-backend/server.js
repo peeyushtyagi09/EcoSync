@@ -6,8 +6,7 @@ const morgan = require('morgan');
 const connectDb  = require('./DB/db');
 const http = require("http");
 const { Server } = require("socket.io");
-const cookieParser = require('cookie-parser');
-const deviceRoutes = require("./routes/Device_Routes");
+const cookieParser = require('cookie-parser'); 
 const initSocket = require("./Socket/Socket.io");
 
 // user routes

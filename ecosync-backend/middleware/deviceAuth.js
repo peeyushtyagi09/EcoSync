@@ -20,7 +20,7 @@ async function deviceAuthMiddleware(req, res, next) {
         next();
     }catch (err) {
         console.error('deviceAuthMiddleware', err);
-        res.status(401).json({ success: false, message: 'device auth failed'};)
+        res.status(401).json({ success: false, message: 'device auth failed'});
     }
 }
 module.exports = deviceAuthMiddleware;

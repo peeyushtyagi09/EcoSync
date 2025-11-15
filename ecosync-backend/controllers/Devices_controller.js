@@ -2,6 +2,7 @@ const { validationResult } = require("express-validator")
 const qrcode = require('qrcode');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
 const Device = require('../models/Device');
 const DeviceLinkRequest = require('../models/DeviceLinkRequest');
 const {
@@ -22,26 +23,34 @@ const LINK_TOKEN_EXP_MS = (() => {
 
 async function requirePasswordReverify(req, res) {
     try {
+        const errors = validationResult(req);
+        if(!errors.isEmpty()){
+            return res.status(400).json({ success: false, errors: errors.array() });
+        }
+
         const { password } = req.body;
         if(!password) return res.status(400).json({ success: false, message: 'password required' });
-        const user = req.user; 
-        if(!user) return res.status(400).json({ success: false, message: 'user required'});
-        const ok = await bcrypt.compare(password, user.passwordHash);
+        const fullUser = req.fullUser || req.user;
+        if(!fullUser) return res.status(400).json({ success: false, message: 'user required'});
+        if(!fullUser.passwordHash){
+            return res.status(500).json({ success: false, message: 'Password verification unavailable ' });
+        }
+        const ok = await bcrypt.compare(password, fullUser.passwordHash);
         if(!ok) return res.status(401).json({ success: false, message: 'invalid password '});
 
         const jti = generateJti();
-        const token = signLinkToken({ userId: user._id.toString(), purpose: 'reverify'}, jti);
+        const token = signLinkToken({ userId: fullUser._id.toString(), purpose: 'reverify'}, jti);
 
-        const doc = await DeviceLinkRequest.create({
+        await DeviceLinkRequest.create({
             jti,
-            userId: user._id,
+            userId: fullUser._id,
             createdAt: new Date(),
             expiresAt: new Date(Date.now() + LINK_TOKEN_EXP_MS),
             used: false,
             clientIp: req.ip,
             userAgent: req.get('User-Agent') || ''
         });
-        res.json({ success: true, data: { reverifyToken: token, expiresInMs: LINK_TOKEN_EXP_MS }});
+        return res.json({ success: true, data: { reverifyToken: token, expiresInMs: LINK_TOKEN_EXP_MS }});
     }catch (err) {
         console.error('requirePasswordReverify', err);
         res.status(500).json({ success: false, message: 'server error '});
@@ -51,6 +60,7 @@ async function requirePasswordReverify(req, res) {
 async function createLinkRequest(req, res)  {
     try {
         const user = req.user;
+        if(!user)  return res.status(401).json({ success: false, message: 'unauthorized '});
         const reverifyToken = req.headers['x-reverify-token'] || req.body.reverifyToken;
         if(!reverifyToken) return res.status(401).json({ success: false, message: 'reverify required '});
 
@@ -99,7 +109,7 @@ async function createLinkRequest(req, res)  {
 
 async function completeLinking(req, res) {
     try{
-        const { linkToken, deviceToken } = req.body;
+        const { linkToken, deviceInfo } = req.body;
         if(!linkToken) return res.status(400).json({ success: false, message: 'linkToken required '});
 
         let payload;
@@ -112,12 +122,17 @@ async function completeLinking(req, res) {
             return res.status(401).json({ success: false, message: 'invalid token purpose' });
         }
 
-        const jti = payload.jti || (payload && payload?.jti) || null;
-
-        if(!jti) {
-            const decoded = jwt.decode(linkToken, { complete: false });
-            if (decoded && decoded.jti) payload.jti = decoded.jti;
+        if(!payload.jti){
+            const decoded = jwt.decode(linkToken, { complete: false }) || {};
+            payload.jti = decoded.jti;
         }
+
+        // const jti = payload.jti || (payload && payload?.jti) || null;
+
+        // if(!jti) {
+        //     const decoded = jwt.decode(linkToken, { complete: false });
+        //     if (decoded && decoded.jti) payload.jti = decoded.jti;
+        // }
 
         const tokenJti = payload.jti;
         if(!tokenJti) {
@@ -132,7 +147,7 @@ async function completeLinking(req, res) {
         // Create deviceId and deviceKey
         const deviceKey = generateDeviceKey();
         const deviceKeyHash = hashDeviceKey(deviceKey);
-        const deviceId = 'ec-dev-' + require('crypto').randomBytes(10).toString('hex');
+        const deviceId = 'ec-dev-' + crypto.randomBytes(10).toString('hex');
     
         const name = (deviceInfo && deviceInfo.name) || `Device-${deviceId.slice(-6)}`;
     
@@ -146,7 +161,24 @@ async function completeLinking(req, res) {
           deviceKeyHash,
           isRevoked: false,
           lastSeen: null
-        });    
+        });
+        reqDoc.used = true;
+        reqDoc.usedAt = new Date();
+        await reqDoc.save();
+        // return deviceKey only once - agent must store securely
+    return res.json({
+        success: true,
+        data: {
+          deviceId: deviceDoc.deviceId,
+          deviceKey,
+          device: {
+            id: deviceDoc._id,
+            deviceId: deviceDoc.deviceId,
+            name: deviceDoc.name,
+            os: deviceDoc.os
+          }
+        }
+      });
     }catch (err) {
         console.error('completeLinking', err);
         res.status(500).json({ success: false, message: 'server error' });
@@ -155,6 +187,7 @@ async function completeLinking(req, res) {
 async function listDevices(req, res) {
     try {
         const user = req.user;
+        if(!user) return res.status(401).json({ success: false, message: 'unauthenticated'});
         const devices = await Device.find({ userId: user._id }).select('-deviceKeyHash').lean().sort({ createdAt: -1 });
         res.json({ success: true, data: devices });
     }catch (err) {
@@ -166,12 +199,13 @@ async function listDevices(req, res) {
 async function revokeDevice(req, res) {
     try {
         const user = req.user;
+        if(!user) return res.status(401).json({ success: false, message: 'unauthenticated'});
         const { deviceId } = req.params;
         const device = await Device.findOne({ deviceId, userId: user._id});
         if(!device) return res.status(400).json({ success: false, message: 'device not found' });
         device.isRevoked = true;
         await device.save();
-        res.json({ success: true, message: 'device revoked' });
+        return res.json({ success: true, message: 'device revoked' });
     }catch (err) {
         console.error('revokeDevice', err);
         res.status(500).json({ success: false, message: 'server error' });
@@ -181,6 +215,7 @@ async function revokeDevice(req, res) {
 async function renameDevice(req, res) {
     try {
         const user = req.user;
+        if(!user) return res.status(401).json({ success: false, message: 'unauthenticated'});
         const { deviceId } = req.params;
         const { name } = req.body;
         if(!name) return res.status(400).json({ success: false, message: 'name required '});

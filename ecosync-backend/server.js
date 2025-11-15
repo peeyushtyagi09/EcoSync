@@ -2,6 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
+const morgan = require('morgan');
 const connectDb  = require('./DB/db');
 const http = require("http");
 const { Server } = require("socket.io");
@@ -12,12 +13,14 @@ const initSocket = require("./Socket/Socket.io");
 // user routes
 const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/users');
+const deviceRoutes = require('./routes/Device_Routes');
 
 
 const app = express();
 
 app.use(helmet());
 app.use(cookieParser());
+app.use(morgan('combined'));
 
 // Middleware
 app.use(express.json());

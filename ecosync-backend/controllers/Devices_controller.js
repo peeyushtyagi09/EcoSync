@@ -152,7 +152,7 @@ async function completeLinking(req, res) {
         res.status(500).json({ success: false, message: 'server error' });
     }
 }
-async function listDevice(req, res) {
+async function listDevices(req, res) {
     try {
         const user = req.user;
         const devices = await Device.find({ userId: user._id }).select('-deviceKeyHash').lean().sort({ createdAt: -1 });
@@ -198,7 +198,7 @@ module.exports = {
     requirePasswordReverify,
     createLinkRequest,
     completeLinking,
-    listDevice,
+    listDevices,
     revokeDevice,    
     renameDevice
 };

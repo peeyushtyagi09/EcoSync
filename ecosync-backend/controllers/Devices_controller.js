@@ -30,11 +30,15 @@ async function requirePasswordReverify(req, res) {
 
         const { password } = req.body;
         if(!password) return res.status(400).json({ success: false, message: 'password required' });
-        const fullUser = req.fullUser || req.user;
-        if(!fullUser) return res.status(400).json({ success: false, message: 'user required'});
-        if(!fullUser.passwordHash){
-            return res.status(500).json({ success: false, message: 'Password verification unavailable ' });
-        }
+        const partialUser = req.user;
+        if (!partialUser)
+            return res.status(401).json({ success: false, message: 'unauthorized user' });
+
+        // Load full user (with passwordHash) because your auth.js strips it
+        const fullUser = await User.findById(partialUser._id);
+        if (!fullUser || !fullUser.passwordHash)
+            return res.status(500).json({ success: false, message: 'password verification unavailable' });
+
         const ok = await bcrypt.compare(password, fullUser.passwordHash);
         if(!ok) return res.status(401).json({ success: false, message: 'invalid password '});
 
@@ -85,7 +89,7 @@ async function createLinkRequest(req, res)  {
             jti,
             userId: user._id,
             createdAt: new Date(),
-            expiredAt,
+            expiresAt,
             used: false, 
             clientIp: req.ip,
             userAgent: req.get('User-Agent') || ''

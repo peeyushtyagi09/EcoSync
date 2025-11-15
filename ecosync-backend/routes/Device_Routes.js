@@ -11,10 +11,10 @@ router.post('/reverify', auth, [
 ], controller.requirePasswordReverify);
 
 // user create a link request (requires reverify token in header x-reverify-token)
-router.post('/link-request', auth, controller.completeLinking);
+router.post('/link-request', auth, controller.createLinkRequest);
 
 // Agest calls this to complete linking. Public does NOT require user JWT
-router.post('/link-complete', auth, controller.createLinkRequest);
+router.post('/link-complete', auth, controller.completeLinking);
 
 // List devices for user
 router.get('/', auth, controller.listDevices);

@@ -9,6 +9,8 @@ async function deviceAuthMiddleware(req, res, next) {
         } 
         const deviceKey = header.split(' ')[1];
         if(!deviceKey) return res.status(401).json({ success: false, message: 'invalid device Key'});
+        const keyHash = hashDeviceKey(deviceKey);
+
         const device = await Device.findOne({ deviceKeyHash: keyHash}).populate('userId', 'username email');
         if(!device) return res.status(401).json({ success: false, message: 'unknown device '});
         if(device.isRevoked) return res.status(403).json({ success: false, message: 'device revoked'})

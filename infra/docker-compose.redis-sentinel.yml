@@ -1,0 +1,61 @@
+version: "3.8"
+services:
+  redis-1:
+    image: redis:7
+    container_name: redis-1
+    command: ["redis-server", "/usr/local/etc/redis/redis-1.conf"]
+    volumes:
+      - ./redis-sentinel/redis-1.conf:/usr/local/etc/redis/redis-1.conf
+      - ./data/redis1:/data
+    ports:
+      - "6379:6379"
+
+  redis-2:
+    image: redis:7
+    container_name: redis-2
+    command: ["redis-server", "/usr/local/etc/redis/redis-2.conf"]
+    volumes:
+      - ./redis-sentinel/redis-2.conf:/usr/local/etc/redis/redis-2.conf
+      - ./data/redis2:/data
+    ports:
+      - "6380:6380"
+
+  redis-3:
+    image: redis:7
+    container_name: redis-3
+    command: ["redis-server", "/usr/local/etc/redis/redis-3.conf"]
+    volumes:
+      - ./redis-sentinel/redis-3.conf:/usr/local/etc/redis/redis-3.conf
+      - ./data/redis3:/data
+    ports:
+      - "6381:6381"
+
+  sentinel-1:
+    image: redis:7
+    container_name: sentinel-1
+    command: ["redis-sentinel", "/usr/local/etc/redis/sentinel-1.conf"]
+    volumes:
+      - ./redis-sentinel/sentinel-1.conf:/usr/local/etc/redis/sentinel-1.conf
+    ports:
+      - "26379:26379"
+    depends_on: ["redis-1","redis-2","redis-3"]
+
+  sentinel-2:
+    image: redis:7
+    container_name: sentinel-2
+    command: ["redis-sentinel", "/usr/local/etc/redis/sentinel-2.conf"]
+    volumes:
+      - ./redis-sentinel/sentinel-2.conf:/usr/local/etc/redis/sentinel-2.conf
+    ports:
+      - "26380:26380"
+    depends_on: ["redis-1","redis-2","redis-3"]
+
+  sentinel-3:
+    image: redis:7
+    container_name: sentinel-3
+    command: ["redis-sentinel", "/usr/local/etc/redis/sentinel-3.conf"]
+    volumes:
+      - ./redis-sentinel/sentinel-3.conf:/usr/local/etc/redis/sentinel-3.conf
+    ports:
+      - "26381:26381"
+    depends_on: ["redis-1","redis-2","redis-3"]

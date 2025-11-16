@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ecosync-config
+  namespace: ecosync
+data:
+  BACKEND_PORT: "7000"
+  METRICS_INTERVAL_MS: "5000"
+  METRICS_BATCH_SIZE: "300"
+  METRICS_BATCH_FLUSH_MS: "60000"

@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ecosync-worker
+  namespace: ecosync
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ecosync-worker
+  template:
+    metadata:
+      labels:
+        app: ecosync-worker
+    spec:
+      containers:
+      - name: worker
+        image: yourrepo/ecosync-backend:latest
+        imagePullPolicy: IfNotPresent
+        command: ["node", "src/workers/metricsWorker.js"]
+        envFrom:
+        - configMapRef:
+            name: ecosync-config
+        - secretRef:
+            name: ecosync-secrets
+        livenessProbe:
+          exec:
+            command: [ "sh", "-c", "pgrep node || exit 1" ]
+          initialDelaySeconds: 20
+          periodSeconds: 20

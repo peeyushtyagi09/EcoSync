@@ -1,0 +1,20 @@
+version: "3.8"
+services:
+  backend:
+    build: ../backend
+    container_name: ecosync-backend-prod
+    restart: unless-stopped
+    env_file:
+      - ../.env
+    ports:
+      - "7000:7000"
+    profiles: ["prod"]
+
+  worker:
+    build: ../backend
+    container_name: ecosync-worker-prod
+    restart: unless-stopped
+    env_file:
+      - ../.env
+    command: ["node","src/workers/metricsWorker.js"]
+    profiles: ["prod"]

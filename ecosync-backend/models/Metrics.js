@@ -1,26 +1,14 @@
-const mongoose = require("mongoose");
+const mongoose = require('mongoose');
 
-const MetricSchema = new mongoose.Schema({
-    metricId: {type: Sting, required: true, unique: true},
-    deviceId: {type: String, required: true, unqiue: true},
-    timestamp: {timestamp: true},
-    cpuUsage: {type: Number},
-    memoryUsage: {type: Number},
-    diskUsage: {
-        usedGB: Number,
-        freeGB: Number,
-    }, 
-    networkUsage: {
-        uploadKbps: Number,
-        downloadKBps: Number,
-    },
-    powerUsage: {
-        watts: Number,
-    },
-    temprature: {
-        cpuTemprature: Number,
-        gpuTemprature: Number,
-    },
-    idleState: Boolean,
-});
-module.exports = mongoose.model("Metrics", MetricSchema);
+const MetricsSchema = new mongoose.Schema({
+    deviceId: {type: String, required: true, index: true },
+    timestamp: { type: Date, required: true, index: true },
+    cpu: {type: Number, required: true },
+    memUsed: { type: Number},
+    memTotal: { type: Number},
+    temp: {type: Number},
+    batteryPercent: {type: Number}, 
+    plugged: { type: Boolean}, 
+    energyScore: { type: Number} 
+}, { timestamp: false });
+module.exports = mongoose.model('Metrics', MetricsSchema);

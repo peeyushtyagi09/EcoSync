@@ -1,0 +1,59 @@
+version: "3.8"
+services:
+  mongo:
+    image: mongo:6
+    container_name: ecosync-mongo
+    restart: unless-stopped
+    volumes:
+      - ./data/mongo:/data/db
+    ports:
+      - "27017:27017"
+    profiles: ["dev","prod"]
+
+  redis:
+    image: redis:7
+    container_name: ecosync-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - ./data/redis:/data
+    command: ["redis-server", "--appendonly", "yes"]
+    profiles: ["dev"]
+
+  backend:
+    build: ../backend
+    container_name: ecosync-backend
+    restart: unless-stopped
+    env_file:
+      - ../.env
+    depends_on:
+      - mongo
+      - redis
+    ports:
+      - "7000:7000"
+    profiles: ["dev","prod"]
+
+  worker:
+    build: ../backend
+    container_name: ecosync-worker
+    restart: unless-stopped
+    env_file:
+      - ../.env
+    command: ["node","src/workers/metricsWorker.js"]
+    depends_on:
+      - mongo
+      - redis
+    profiles: ["dev","prod"]
+
+  agent:
+    build: ../agent
+    container_name: ecosync-agent
+    restart: unless-stopped
+    env_file:
+      - ../.env
+    environment:
+      - BACKEND_URL=http://backend:7000
+    volumes:
+      - ./agent-data:/root/.ecosync
+    profiles: ["dev"]

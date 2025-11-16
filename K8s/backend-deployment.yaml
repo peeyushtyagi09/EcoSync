@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ecosync-backend
+  namespace: ecosync
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: ecosync-backend
+  template:
+    metadata:
+      labels:
+        app: ecosync-backend
+    spec:
+      containers:
+      - name: backend
+        image: yourrepo/ecosync-backend:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 7000
+        envFrom:
+        - configMapRef:
+            name: ecosync-config
+        - secretRef:
+            name: ecosync-secrets
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 7000
+          initialDelaySeconds: 20
+          periodSeconds: 15
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 7000
+          initialDelaySeconds: 10
+          periodSeconds: 10

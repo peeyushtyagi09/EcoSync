@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: ecosync-agent
+  namespace: ecosync
+spec:
+  selector:
+    matchLabels:
+      app: ecosync-agent
+  template:
+    metadata:
+      labels:
+        app: ecosync-agent
+    spec:
+      containers:
+      - name: agent
+        image: yourrepo/ecosync-agent:latest
+        envFrom:
+        - configMapRef:
+            name: ecosync-config
+        - secretRef:
+            name: ecosync-secrets
+        volumeMounts:
+        - name: agent-data
+          mountPath: /root/.ecosync
+      volumes:
+      - name: agent-data
+        emptyDir: {}

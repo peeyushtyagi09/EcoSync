@@ -1,7 +1,7 @@
 version: "3.8"
 services:
   backend:
-    build: ../backend
+    build: ../ecosync-backend
     container_name: ecosync-backend-prod
     restart: unless-stopped
     env_file:
@@ -11,7 +11,7 @@ services:
     profiles: ["prod"]
 
   worker:
-    build: ../backend
+    build: ../ecosync-backend
     container_name: ecosync-worker-prod
     restart: unless-stopped
     env_file:

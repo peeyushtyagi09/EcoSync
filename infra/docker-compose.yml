@@ -22,7 +22,7 @@ services:
     profiles: ["dev"]
 
   backend:
-    build: ../backend
+    build: ../ecosync-backend
     container_name: ecosync-backend
     restart: unless-stopped
     env_file:
@@ -35,7 +35,7 @@ services:
     profiles: ["dev","prod"]
 
   worker:
-    build: ../backend
+    build: ../ecosync-backend
     container_name: ecosync-worker
     restart: unless-stopped
     env_file:
@@ -53,7 +53,7 @@ services:
     env_file:
       - ../.env
     environment:
-      - BACKEND_URL=http://backend:7000
+      - BACKEND_URL=http://ecosync-backend:7000
     volumes:
       - ./agent-data:/root/.ecosync
     profiles: ["dev"]
